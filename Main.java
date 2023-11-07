@@ -1,10 +1,25 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Scanner;
+
+enum Status {
+	SAFE,
+	INFECTED
+}
+class SimulationResult {
+	int infected = 0;
+	int days = 0;
+	int uniqueInfections = 0;
+	boolean allInfected = false;
+}
 
 public class Main {
 	public static void main(String[] args) {
 		int computers = 20;
 		double infection = 0.1;
 		int dailyRepairs = 5;
+		int trials = 10000;
 		boolean validInput = true;
 		Scanner scanner = new Scanner(System.in);
 
@@ -44,11 +59,59 @@ public class Main {
 				scanner.nextLine();
 			}
 		}
-		System.out.printf("\nComputers: %d\nInfection Rate: %.3f%%\nRepairs: %d\n", computers, infection * 100,
+		System.out.printf("\nComputers: %d\nInfection Rate: %.2f%%\nRepairs: %d\n", computers, infection * 100,
 				dailyRepairs);
 		scanner.close();
-		// Calculate the steps here
+		
+		double totalInfected = 0;
+		double totalDays = 0;
+		double uniqueInfections = 0;
+		double allInfected = 0;
+		for (int i = 0; i < trials; i++) {
+			SimulationResult result = simulation(computers, infection, dailyRepairs);
+			totalInfected += result.infected;
+			totalDays += result.days;
+			uniqueInfections += result.uniqueInfections;
+			if (result.allInfected) allInfected++;
+		}
+		
+		System.out.println("\nAverage number of computers infected: " + (totalInfected/trials));
+		System.out.println("Average number of unique infections: " + (uniqueInfections/trials));
+		System.out.println("Average number of days: " + (totalDays/trials));
+		System.out.printf("Chance of every computer infected once: %.3f%%", (allInfected/trials) * 100);
+	}
+	
+	// Virus simulation
+	public static SimulationResult simulation(int computers, double infectRate, int dailyRepairs) {
+		SimulationResult result = new SimulationResult();
+		if (computers < 1) return result;
+		
+		ArrayList<Status> network = new ArrayList<>(Collections.nCopies(computers, Status.SAFE));
+		network.set(0, Status.INFECTED);
+		HashSet<Integer> log = new HashSet<>();
+		
+		while (network.contains(Status.INFECTED)) {
+			ArrayList<Integer> infectedComputer = new ArrayList<>();
+			result.infected += (int) network.stream().filter(e -> e == Status.INFECTED).count();
+			
+			// Repairman
+			for (int i=0; i<dailyRepairs; i++) {
+				if (!network.contains(Status.INFECTED)) break;
+				infectedComputer.add(network.indexOf(Status.INFECTED));
+				log.add(network.indexOf(Status.INFECTED));
+				network.set(network.indexOf(Status.INFECTED), Status.SAFE);
+			}
+			
+			// Infect
+			for(int i=0; i<network.size(); i++) {
+				// Prevents self infection
+				if (infectedComputer.contains(i)) continue;
+				if (Math.random() <= infectRate) network.set(i, Status.INFECTED);
+			}
+			result.days++;
+		}
+		result.allInfected = log.size() == computers;
+		result.uniqueInfections = log.size();
+		return result;
 	}
 }
-
-
