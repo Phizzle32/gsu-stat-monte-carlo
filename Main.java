@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Scanner;
 
@@ -67,18 +68,24 @@ public class Main {
 		double totalDays = 0;
 		double uniqueInfections = 0;
 		double allInfected = 0;
+		ArrayList<Integer> infectedResults = new ArrayList<>();
+		ArrayList<Integer> dayResults = new ArrayList<>();
 		for (int i = 0; i < trials; i++) {
 			SimulationResult result = simulation(computers, infection, dailyRepairs);
 			totalInfected += result.infected;
 			totalDays += result.days;
 			uniqueInfections += result.uniqueInfections;
+			infectedResults.add(result.infected);
+			dayResults.add(result.days);
 			if (result.allInfected)
 				allInfected++;
 		}
 
 		System.out.println("\nAverage number of infections: " + (totalInfected / trials));
+		System.out.println("Median number of infections: " + median(infectedResults));
 		System.out.println("Average number of unique infections: " + (uniqueInfections / trials));
 		System.out.println("Average number of days: " + (totalDays / trials));
+		System.out.println("Median number of days: " + median(dayResults));
 		System.out.printf("Chance of every computer infected once: %.3f%%", (allInfected / trials) * 100);
 	}
 
@@ -129,5 +136,13 @@ public class Main {
 		result.allInfected = log.size() == computers;
 		result.uniqueInfections = log.size();
 		return result;
+	}
+
+	public static double median(ArrayList<Integer> arr) {
+		arr.sort(Comparator.naturalOrder());
+		if (arr.size() % 2 != 0) {
+			return arr.get(arr.size() / 2);
+		}
+		return ((double) (arr.get(arr.size() / 2) + (double) (arr.get(arr.size() / 2 - 1))) / 2);
 	}
 }
